@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachable Machine - Reconhecimento de Imagem</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --bg-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        #webcam-container {
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #e2e8f0;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        #webcam-container canvas {
+            border-radius: 15px;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .btn-start {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-start:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        #label-container {
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .prediction-item {
+            margin-bottom: 1rem;
+        }
+
+        .prediction-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress {
+            height: 12px;
+            border-radius: 6px;
+            background-color: #f1f5f9;
+        }
+
+        .progress-bar {
+            background-color: var(--primary-color);
+            border-radius: 6px;
+            transition: width 0.2s ease;
+        }
+
+        .footer-text {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <h1>Teachable Machine</h1>
+        <p class="text-muted mb-4">Reconhecimento de imagem em tempo real</p>
+        
+        <button class="btn btn-primary btn-start" type="button" onclick="init()" id="start-btn">
+            Ativar Câmera
+        </button>
+
+        <div id="webcam-container">
+            <div class="text-muted small p-3" id="placeholder-text">Aguardando permissão...</div>
+        </div>
+
+        <div id="label-container">
+            <!-- As barras de progresso serão inseridas aqui dinamicamente -->
+        </div>
+
+        <div class="footer-text">
+            Desenvolvido com TensorFlow.js & Teachable Machine
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    
+    <script type="text/javascript">
+        // Link do modelo exportado pelo Teachable Machine
+        // Certifique-se de que o caminho "./my_model/" contenha model.json e metadata.json
+        const URL = "./my_model/";
+
+        let model, webcam, labelContainer, maxPredictions;
+
+        async function init() {
+            const startBtn = document.getElementById("start-btn");
+            const placeholder = document.getElementById("placeholder-text");
+            
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Carregando...';
+
+            try {
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                const flip = true; 
+                webcam = new tmImage.Webcam(200, 200, flip); 
+                await webcam.setup(); 
+                await webcam.play();
+                window.requestAnimationFrame(loop);
+
+                // Remove placeholder e adiciona o canvas
+                placeholder.style.display = "none";
+                document.getElementById("webcam-container").appendChild(webcam.canvas);
+                
+                labelContainer = document.getElementById("label-container");
+                labelContainer.innerHTML = ""; // Limpa container
+
+                // Cria as barras de progresso para cada classe
+                for (let i = 0; i < maxPredictions; i++) {
+                    const predictionDiv = document.createElement("div");
+                    predictionDiv.className = "prediction-item";
+                    
+                    const classLabels = model.getClassLabels();
+                    
+                    predictionDiv.innerHTML = `
+                        <div class="prediction-label">
+                            <span>${classLabels[i]}</span>
+                            <span id="percent-${i}">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div id="bar-${i}" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    `;
+                    labelContainer.appendChild(predictionDiv);
+                }
+
+                startBtn.style.display = "none"; // Esconde o botão após iniciar
+
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao acessar a câmera ou carregar o modelo. Verifique as permissões.");
+                startBtn.disabled = false;
+                startBtn.innerText = "Tentar Novamente";
+            }
+        }
+
+        async function loop() {
+            webcam.update(); 
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            for (let i = 0; i < maxPredictions; i++) {
+                const probability = (prediction[i].probability * 100).toFixed(0);
+                const bar = document.getElementById(`bar-${i}`);
+                const percentText = document.getElementById(`percent-${i}`);
+                
+                if (bar && percentText) {
+                    bar.style.width = probability + "%";
+                    percentText.innerHTML = probability + "%";
+                    
+                    // Muda a cor da barra se a confiança for alta
+                    if (probability > 80) {
+                        bar.style.backgroundColor = "#10b981"; // Verde
+                    } else if (probability > 50) {
+                        bar.style.backgroundColor = "#4f46e5"; // Roxo original
+                    } else {
+                        bar.style.backgroundColor = "#94a3b8"; // Cinza
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
