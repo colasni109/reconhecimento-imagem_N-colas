@@ -1,12 +1,11 @@
 def eh_primo(numero):
-    """
-    Verifica se um número é primo.
-    
+    """Verifica se um número é primo.
+
     Args:
-        numero (int): O número a ser verificado
-        
+        numero (int): Número a ser verificado.
+
     Returns:
-        bool: True se o número é primo, False caso contrário
+        bool: True se o número for primo, caso contrário False.
     """
     # Números menores que 2 não são primos
     if numero < 2:
