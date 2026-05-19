@@ -1,0 +1,35 @@
+# settings.py
+
+# Dimensões da tela
+WIDTH = 800
+HEIGHT = 600
+
+# Taxa de quadros
+FPS = 60
+
+# Cores (R, G, B)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+
+# Configurações do Jogador
+PLAYER_WIDTH = 40
+PLAYER_HEIGHT = 40
+PLAYER_SPEED = 6
+PLAYER_COLOR = GREEN
+
+# Configurações do Projétil
+PROJECTILE_WIDTH = 5
+PROJECTILE_HEIGHT = 15
+PROJECTILE_SPEED = -10 # Move para cima
+PROJECTILE_COLOR = YELLOW
+
+# Configurações do Asteroide
+ASTEROID_MIN_SIZE = 20
+ASTEROID_MAX_SIZE = 50
+ASTEROID_MIN_SPEED = 1
+ASTEROID_MAX_SPEED = 3
+ASTEROID_COLOR = RED
